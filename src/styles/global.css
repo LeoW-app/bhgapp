@@ -1,0 +1,506 @@
+/* ===================================================================
+   Kindergarten Planner — Design Tokens & Base Styles
+
+   Aesthetic direction: warm & tactile. Cream paper backgrounds,
+   terracotta primary, sage accent. Feels like a hand-organized
+   binder rather than a sterile app.
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  /* Palette */
+  --cream: #F5EFE4;
+  --cream-deep: #EDE5D3;
+  --paper: #FBF7EE;
+  --ink: #2B2620;
+  --ink-soft: #5C544A;
+  --ink-muted: #958A7C;
+
+  --terracotta: #C66B3D;
+  --terracotta-soft: #E8B99D;
+  --terracotta-deep: #9E4F26;
+
+  --sage: #5A8C6F;
+  --sage-soft: #B8D4C2;
+  --sage-deep: #3E6A52;
+
+  --sun: #E8B84A;
+  --sun-soft: #F5DFA0;
+
+  --rose: #C85A5A;
+  --rose-soft: #E8BCBC;
+
+  --sky: #6B95B8;
+  --sky-soft: #C5D7E5;
+
+  --lavender: #8B6F9E;
+
+  /* Calendar type colors */
+  --c-closure: #CFC6B8;
+  --c-vacation: #C5D7E5;
+  --c-absence: #E8BCBC;
+  --c-event: #F5DFA0;
+
+  /* Typography */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  /* Shadows — warm, soft */
+  --shadow-sm: 0 1px 2px rgba(62, 44, 24, 0.06), 0 2px 6px rgba(62, 44, 24, 0.04);
+  --shadow-md: 0 2px 4px rgba(62, 44, 24, 0.06), 0 8px 20px rgba(62, 44, 24, 0.08);
+  --shadow-lg: 0 4px 8px rgba(62, 44, 24, 0.08), 0 20px 40px rgba(62, 44, 24, 0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: linear-gradient(135deg, #E8DFCC 0%, #D9CDB5 100%);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  /* Subtle grain texture */
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(198, 107, 61, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(90, 140, 111, 0.08), transparent 40%);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--terracotta);
+  outline-offset: 2px;
+}
+
+/* =============================================================
+   Phone Frame — so the prototype feels like a real mobile app
+   ============================================================= */
+
+.phone-shell {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  max-width: 1100px;
+  width: 100%;
+}
+
+.phone-wrap {
+  flex-shrink: 0;
+}
+
+.phone {
+  width: 390px;
+  height: 780px;
+  background: var(--paper);
+  border-radius: 48px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 2px #2B2620,
+    0 0 0 12px #1a1612,
+    var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 28px;
+  background: #1a1612;
+  border-radius: 0 0 16px 16px;
+  z-index: 100;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--paper);
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar {
+  height: 44px;
+  padding: 0 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  padding-bottom: 6px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.status-bar .status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 90px; /* space for tab bar */
+}
+
+.screen-body::-webkit-scrollbar { width: 0; }
+
+/* =============================================================
+   Tab Bar (bottom nav)
+   ============================================================= */
+
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 78px;
+  background: rgba(251, 247, 238, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(43, 38, 32, 0.08);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  padding: 10px 8px 0;
+  z-index: 50;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+
+.tab-btn.active {
+  color: var(--terracotta);
+}
+
+.tab-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.tab-btn.active .tab-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+/* =============================================================
+   Common components — screen headers, cards, chips, buttons
+   ============================================================= */
+
+.screen-header {
+  padding: 16px 24px 8px;
+}
+
+.screen-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.screen-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.screen-title em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 16px 24px 8px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid rgba(43, 38, 32, 0.06);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-inset {
+  margin: 0 20px 12px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--cream);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.chip.chip-critical {
+  background: var(--rose-soft);
+  color: var(--terracotta-deep);
+}
+
+.chip.chip-event {
+  background: var(--sun-soft);
+  color: #8A6B12;
+}
+
+.btn-primary {
+  background: var(--terracotta);
+  color: var(--paper);
+  padding: 14px 22px;
+  border-radius: var(--r-md);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 0 var(--terracotta-deep), var(--shadow-sm);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--terracotta-deep);
+}
+
+.btn-ghost {
+  background: var(--cream);
+  color: var(--ink);
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.btn-ghost:hover { background: var(--cream-deep); }
+
+/* =============================================================
+   Avatar
+   ============================================================= */
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.avatar-sm { width: 24px; height: 24px; font-size: 11px; }
+.avatar-lg { width: 48px; height: 48px; font-size: 18px; }
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar-stack .avatar {
+  border: 2px solid var(--paper);
+  margin-left: -8px;
+}
+
+.avatar-stack .avatar:first-child { margin-left: 0; }
+
+/* =============================================================
+   Info panel (right side — explains each screen)
+   ============================================================= */
+
+.info-panel {
+  max-width: 340px;
+  padding-top: 20px;
+  color: var(--ink);
+}
+
+.info-panel .info-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--terracotta-deep);
+  margin-bottom: 8px;
+}
+
+.info-panel .info-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+
+.info-panel .info-title em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.info-panel p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+
+.info-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.info-panel li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.info-panel li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  background: var(--terracotta);
+  border-radius: 50%;
+}
+
+.info-panel-legend {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(43, 38, 32, 0.1);
+}
+
+.info-panel-legend h4 {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* =============================================================
+   Responsive — stack the info panel below on small screens
+   ============================================================= */
+
+@media (max-width: 900px) {
+  .phone-shell {
+    flex-direction: column;
+    align-items: center;
+  }
+  .info-panel {
+    max-width: 390px;
+    padding-top: 0;
+  }
+}
+
+/* =============================================================
+   Animations
+   ============================================================= */
+
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}

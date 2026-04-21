@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kindergarten Planner — Prototype</title>
+<style>
+/* ===================================================================
+   Kindergarten Planner — Design Tokens & Base Styles
+
+   Aesthetic direction: warm & tactile. Cream paper backgrounds,
+   terracotta primary, sage accent. Feels like a hand-organized
+   binder rather than a sterile app.
+   =================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  /* Palette */
+  --cream: #F5EFE4;
+  --cream-deep: #EDE5D3;
+  --paper: #FBF7EE;
+  --ink: #2B2620;
+  --ink-soft: #5C544A;
+  --ink-muted: #958A7C;
+
+  --terracotta: #C66B3D;
+  --terracotta-soft: #E8B99D;
+  --terracotta-deep: #9E4F26;
+
+  --sage: #5A8C6F;
+  --sage-soft: #B8D4C2;
+  --sage-deep: #3E6A52;
+
+  --sun: #E8B84A;
+  --sun-soft: #F5DFA0;
+
+  --rose: #C85A5A;
+  --rose-soft: #E8BCBC;
+
+  --sky: #6B95B8;
+  --sky-soft: #C5D7E5;
+
+  --lavender: #8B6F9E;
+
+  /* Calendar type colors */
+  --c-closure: #CFC6B8;
+  --c-vacation: #C5D7E5;
+  --c-absence: #E8BCBC;
+  --c-event: #F5DFA0;
+
+  /* Typography */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  /* Spacing scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  /* Shadows — warm, soft */
+  --shadow-sm: 0 1px 2px rgba(62, 44, 24, 0.06), 0 2px 6px rgba(62, 44, 24, 0.04);
+  --shadow-md: 0 2px 4px rgba(62, 44, 24, 0.06), 0 8px 20px rgba(62, 44, 24, 0.08);
+  --shadow-lg: 0 4px 8px rgba(62, 44, 24, 0.08), 0 20px 40px rgba(62, 44, 24, 0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: linear-gradient(135deg, #E8DFCC 0%, #D9CDB5 100%);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  /* Subtle grain texture */
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(198, 107, 61, 0.08), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(90, 140, 111, 0.08), transparent 40%);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--terracotta);
+  outline-offset: 2px;
+}
+
+/* =============================================================
+   Phone Frame — so the prototype feels like a real mobile app
+   ============================================================= */
+
+.phone-shell {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  max-width: 1100px;
+  width: 100%;
+}
+
+.phone-wrap {
+  flex-shrink: 0;
+}
+
+.phone {
+  width: 390px;
+  height: 780px;
+  background: var(--paper);
+  border-radius: 48px;
+  padding: 12px;
+  box-shadow:
+    0 0 0 2px #2B2620,
+    0 0 0 12px #1a1612,
+    var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.phone-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 28px;
+  background: #1a1612;
+  border-radius: 0 0 16px 16px;
+  z-index: 100;
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  background: var(--paper);
+  border-radius: 36px;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar {
+  height: 44px;
+  padding: 0 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  padding-bottom: 6px;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.status-bar .status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.screen-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 90px; /* space for tab bar */
+}
+
+.screen-body::-webkit-scrollbar { width: 0; }
+
+/* =============================================================
+   Tab Bar (bottom nav)
+   ============================================================= */
+
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 78px;
+  background: rgba(251, 247, 238, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(43, 38, 32, 0.08);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-around;
+  padding: 10px 8px 0;
+  z-index: 50;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: color 0.2s ease;
+}
+
+.tab-btn.active {
+  color: var(--terracotta);
+}
+
+.tab-btn svg {
+  width: 24px;
+  height: 24px;
+}
+
+.tab-btn.active .tab-dot {
+  width: 4px;
+  height: 4px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  margin-top: 2px;
+}
+
+/* =============================================================
+   Common components — screen headers, cards, chips, buttons
+   ============================================================= */
+
+.screen-header {
+  padding: 16px 24px 8px;
+}
+
+.screen-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 4px;
+}
+
+.screen-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.screen-title em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 16px 24px 8px;
+}
+
+.card {
+  background: var(--paper);
+  border: 1px solid rgba(43, 38, 32, 0.06);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-inset {
+  margin: 0 20px 12px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--cream);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.chip.chip-critical {
+  background: var(--rose-soft);
+  color: var(--terracotta-deep);
+}
+
+.chip.chip-event {
+  background: var(--sun-soft);
+  color: #8A6B12;
+}
+
+.btn-primary {
+  background: var(--terracotta);
+  color: var(--paper);
+  padding: 14px 22px;
+  border-radius: var(--r-md);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 0 var(--terracotta-deep), var(--shadow-sm);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn-primary:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--terracotta-deep);
+}
+
+.btn-ghost {
+  background: var(--cream);
+  color: var(--ink);
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.btn-ghost:hover { background: var(--cream-deep); }
+
+/* =============================================================
+   Avatar
+   ============================================================= */
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+.avatar-sm { width: 24px; height: 24px; font-size: 11px; }
+.avatar-lg { width: 48px; height: 48px; font-size: 18px; }
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar-stack .avatar {
+  border: 2px solid var(--paper);
+  margin-left: -8px;
+}
+
+.avatar-stack .avatar:first-child { margin-left: 0; }
+
+/* =============================================================
+   Info panel (right side — explains each screen)
+   ============================================================= */
+
+.info-panel {
+  max-width: 340px;
+  padding-top: 20px;
+  color: var(--ink);
+}
+
+.info-panel .info-eyebrow {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--terracotta-deep);
+  margin-bottom: 8px;
+}
+
+.info-panel .info-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
+  margin-bottom: 16px;
+  color: var(--ink);
+}
+
+.info-panel .info-title em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.info-panel p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+}
+
+.info-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+
+.info-panel li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.info-panel li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  background: var(--terracotta);
+  border-radius: 50%;
+}
+
+.info-panel-legend {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(43, 38, 32, 0.1);
+}
+
+.info-panel-legend h4 {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 10px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+/* =============================================================
+   Responsive — stack the info panel below on small screens
+   ============================================================= */
+
+@media (max-width: 900px) {
+  .phone-shell {
+    flex-direction: column;
+    align-items: center;
+  }
+  .info-panel {
+    max-width: 390px;
+    padding-top: 0;
+  }
+}
+
+/* =============================================================
+   Animations
+   ============================================================= */
+
+@keyframes fade-slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useMemo } = React;
+
+// ========== seed data ==========
+// Mock data representing one household's kindergarten life
+// In a real app this would come from a backend API
+
+const household = {
+  id: "hh_001",
+  name: "Emma's Kindergarten",
+  child: {
+    name: "Emma",
+    age: 4,
+    kindergarten: "Sonnenschein Kita",
+  },
+};
+
+const members = [
+  { id: "u1", name: "Anna", initial: "A", color: "#C66B3D", role: "Owner", online: true },
+  { id: "u2", name: "Marco", initial: "M", color: "#5A8C6F", role: "Parent", online: true },
+  { id: "u3", name: "Oma Lise", initial: "L", color: "#8B6F9E", role: "Viewer", online: false },
+];
+
+// Current user (which member is using the app right now)
+const currentUserId = "u1";
+
+// Today's date is hardcoded so the prototype is stable
+const TODAY = new Date(2026, 3, 21); // April 21, 2026 — a Tuesday
+
+// Daily default items (appear every day)
+const dailyItems = [
+  { id: "i1", emoji: "💧", title: "Water bottle", critical: true, notes: "The blue one" },
+  { id: "i2", emoji: "🥪", title: "Lunchbox", critical: true, notes: "Check there's fruit" },
+  { id: "i3", emoji: "👟", title: "Indoor shoes", critical: false },
+  { id: "i4", emoji: "👕", title: "Spare clothes", critical: false, notes: "Refresh on Mondays" },
+  { id: "i5", emoji: "🧸", title: "Comfort toy", critical: false, notes: "Only Fri — Hoppi bunny" },
+  { id: "i6", emoji: "📓", title: "Communication notebook", critical: false },
+];
+
+// Event-specific items for today (Tuesday = swimming)
+const eventItems = [
+  { id: "e1", emoji: "🩱", title: "Swimsuit", critical: true, eventTag: "Swimming" },
+  { id: "e2", emoji: "🏖️", title: "Towel", critical: true, eventTag: "Swimming" },
+  { id: "e3", emoji: "🥽", title: "Goggles", critical: false, eventTag: "Swimming" },
+];
+
+// Calendar events for the visible month
+const events = [
+  // Past
+  { id: "ev1", date: "2026-04-06", type: "closure", title: "Staff training day" },
+  { id: "ev2", date: "2026-04-10", type: "event", title: "Costume day" },
+  { id: "ev3", date: "2026-04-13", type: "absence", title: "Sick — fever" },
+  { id: "ev4", date: "2026-04-14", type: "absence", title: "Sick — recovering" },
+  // Today and upcoming
+  { id: "ev5", date: "2026-04-21", type: "event", title: "Swimming day", checklist: "Swimming" },
+  { id: "ev6", date: "2026-04-24", type: "event", title: "Forest trip", checklist: "Forest" },
+  { id: "ev7", date: "2026-04-28", type: "event", title: "Parent coffee morning" },
+  { id: "ev8", date: "2026-05-01", type: "closure", title: "Public holiday" },
+  { id: "ev9", date: "2026-05-04", type: "vacation", title: "Family vacation", endDate: "2026-05-08" },
+  { id: "ev10", date: "2026-05-05", type: "vacation", title: "Family vacation" },
+  { id: "ev11", date: "2026-05-06", type: "vacation", title: "Family vacation" },
+  { id: "ev12", date: "2026-05-07", type: "vacation", title: "Family vacation" },
+  { id: "ev13", date: "2026-05-08", type: "vacation", title: "Family vacation" },
+];
+
+// Activity feed entries (last few changes in the household)
+const activity = [
+  { id: "a1", userId: "u1", action: "checked", target: "Water bottle", at: "Today, 7:42 AM" },
+  { id: "a2", userId: "u2", action: "added", target: "absence for Friday", at: "Yesterday, 9:12 PM" },
+  { id: "a3", userId: "u1", action: "added", target: "Swimming day event", at: "2 days ago" },
+  { id: "a4", userId: "u2", action: "checked", target: "Lunchbox", at: "2 days ago, 7:38 AM" },
+  { id: "a5", userId: "u3", action: "joined", target: "the household as Viewer", at: "1 week ago" },
+];
+
+// Reusable checklist templates
+const checklistTemplates = [
+  {
+    id: "t1",
+    name: "Daily default",
+    kind: "daily",
+    itemCount: 6,
+    description: "Runs every kindergarten day",
+  },
+  {
+    id: "t2",
+    name: "Swimming",
+    kind: "event",
+    itemCount: 3,
+    description: "Attached to Swimming day events",
+  },
+  {
+    id: "t3",
+    name: "Forest trip",
+    kind: "event",
+    itemCount: 4,
+    description: "Attached to Forest trip events",
+  },
+  {
+    id: "t4",
+    name: "Rainy day",
+    kind: "weather",
+    itemCount: 3,
+    description: "Activates when forecast >60% rain",
+  },
+];
+
+const memberById = (id) => members.find((m) => m.id === id) || members[0];
+
+// ========== shared components ==========
+/* ==============================================================
+   Avatars
+   ============================================================== */
+
+function Avatar({ member, size = 'md' }) {
+  const cls = size === 'sm' ? 'avatar avatar-sm' : size === 'lg' ? 'avatar avatar-lg' : 'avatar';
+  return (
+    <div className={cls} style={{ background: member.color }}>
+      {member.initial}
+    </div>
+  );
+}
+
+function AvatarStack({ members, max = 3 }) {
+  const shown = members.slice(0, max);
+  return (
+    <div className="avatar-stack">
+      {shown.map(m => <Avatar key={m.id} member={m} size="sm" />)}
+    </div>
+  );
+}
+
+/* ==============================================================
+   Icon set — custom inline SVGs so we avoid icon-library dependency
+   Each icon is 24×24 with stroke-based design for warmth
+   ============================================================== */
+
+const iconProps = {
+  width: 24,
+  height: 24,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+};
+
+const Icons = {
+  Home: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M3 11L12 3l9 8v9a2 2 0 01-2 2h-4v-6h-6v6H5a2 2 0 01-2-2v-9z" />
+    </svg>
+  ),
+  Check: (p) => (
+    <svg {...iconProps} {...p}>
+      <rect x="3" y="4" width="18" height="18" rx="3" />
+      <path d="M8 12l3 3 5-6" />
+      <path d="M3 8h18" />
+    </svg>
+  ),
+  Calendar: (p) => (
+    <svg {...iconProps} {...p}>
+      <rect x="3" y="4" width="18" height="18" rx="3" />
+      <path d="M3 10h18M8 2v4M16 2v4" />
+    </svg>
+  ),
+  Users: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  ),
+  Activity: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+    </svg>
+  ),
+  Plus: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  ),
+  ChevronLeft: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  ),
+  ChevronRight: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  ),
+  Bell: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M13.7 21a2 2 0 01-3.4 0" />
+    </svg>
+  ),
+  Settings: (p) => (
+    <svg {...iconProps} {...p}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
+    </svg>
+  ),
+  Sparkle: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M12 3l2 6 6 2-6 2-2 6-2-6-6-2 6-2 2-6z" />
+    </svg>
+  ),
+  Drop: (p) => (
+    <svg {...iconProps} {...p}>
+      <path d="M12 2s7 8 7 13a7 7 0 01-14 0c0-5 7-13 7-13z" />
+    </svg>
+  ),
+  Dot: (p) => (
+    <svg {...iconProps} {...p}>
+      <circle cx="12" cy="12" r="3" fill="currentColor" />
+    </svg>
+  ),
+};
+
+/* ==============================================================
+   Phone frame
+   ============================================================== */
+
+function PhoneFrame({ children, time = '7:24' }) {
+  return (
+    <div className="phone-wrap">
+      <div className="phone">
+        <div className="phone-notch" />
+        <div className="phone-screen">
+          <div className="status-bar">
+            <span>{time}</span>
+            <div className="status-right">
+              <span>●●●</span>
+              <span>⌁</span>
+              <span>▰▰▰▱</span>
+            </div>
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==============================================================
+   Tab bar (bottom nav)
+   ============================================================== */
+
+function TabBar({ active, onChange }) {
+  const tabs = [
+    { id: 'today', label: 'Today', icon: Icons.Home },
+    { id: 'calendar', label: 'Calendar', icon: Icons.Calendar },
+    { id: 'lists', label: 'Lists', icon: Icons.Check },
+    { id: 'household', label: 'Family', icon: Icons.Users },
+    { id: 'activity', label: 'Activity', icon: Icons.Activity },
+  ];
+
+  return (
+    <div className="tab-bar">
+      {tabs.map(t => {
+        const Icon = t.icon;
+        const isActive = active === t.id;
+        return (
+          <button
+            key={t.id}
+            className={`tab-btn ${isActive ? 'active' : ''}`}
+            onClick={() => onChange(t.id)}
+          >
+            <Icon />
+            <span>{t.label}</span>
+            {isActive && <div className="tab-dot" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ==============================================================
+   Toast — shown after actions
+   ============================================================== */
+
+function Toast({ message, show }) {
+  if (!show) return null;
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 96,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'var(--ink)',
+      color: 'var(--paper)',
+      padding: '10px 18px',
+      borderRadius: 999,
+      fontSize: 13,
+      fontWeight: 700,
+      zIndex: 200,
+      boxShadow: 'var(--shadow-md)',
+      animation: 'fade-slide-up 0.25s ease',
+    }}>
+      {message}
+    </div>
+  );
+}
+
+// ========== checklist row ==========
+/**
+ * A single tappable checklist row.
+ * Large tap target (60px tall), optimistic check animation,
+ * shows which parent checked it and when.
+ */
+function ChecklistRow({
+  item,
+  checked,
+  checkedBy,
+  checkedAt,
+  onToggle,
+}) {
+  const [animating, setAnimating] = useState(false);
+
+  const handleClick = () => {
+    setAnimating(true);
+    setTimeout(() => setAnimating(false), 300);
+    onToggle(item.id);
+  };
+
+  const checker = checkedBy ? memberById(checkedBy) : null;
+
+  return (
+    <button
+      onClick={handleClick}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
+        padding: '14px 20px',
+        minHeight: 68,
+        background: checked ? 'rgba(90, 140, 111, 0.08)' : 'transparent',
+        borderBottom: '1px solid rgba(43, 38, 32, 0.06)',
+        textAlign: 'left',
+        transition: 'background 0.2s ease',
+        position: 'relative',
+      }}
+    >
+      {/* Checkbox */}
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 10,
+          border: checked ? 'none' : '2px solid rgba(43, 38, 32, 0.2)',
+          background: checked ? 'var(--sage)' : 'transparent',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          transition: 'all 0.2s ease',
+          transform: animating ? 'scale(1.15)' : 'scale(1)',
+        }}
+      >
+        {checked && (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 13l4 4L19 7" style={{
+              strokeDasharray: 20,
+              strokeDashoffset: 0,
+              animation: animating ? 'check-draw 0.3s ease forwards' : 'none',
+            }} />
+          </svg>
+        )}
+      </div>
+
+      {/* Emoji */}
+      <div style={{
+        fontSize: 24,
+        width: 32,
+        textAlign: 'center',
+        opacity: checked ? 0.5 : 1,
+        transition: 'opacity 0.2s',
+      }}>
+        {item.emoji}
+      </div>
+
+      {/* Title and notes */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: 'var(--ink)',
+          textDecoration: checked ? 'line-through' : 'none',
+          opacity: checked ? 0.5 : 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+        }}>
+          {item.title}
+          {item.critical && !checked && (
+            <span style={{
+              width: 6,
+              height: 6,
+              background: 'var(--rose)',
+              borderRadius: '50%',
+              display: 'inline-block',
+            }} />
+          )}
+        </div>
+        {item.notes && (
+          <div style={{
+            fontSize: 12,
+            color: 'var(--ink-muted)',
+            marginTop: 2,
+            fontStyle: 'italic',
+            opacity: checked ? 0.5 : 1,
+          }}>
+            {item.notes}
+          </div>
+        )}
+        {item.eventTag && (
+          <div style={{ marginTop: 4 }}>
+            <span className="chip chip-event">{item.eventTag}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Who checked it */}
+      {checked && checker && (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: 2,
+        }}>
+          <Avatar member={checker} size="sm" />
+          {checkedAt && (
+            <span style={{ fontSize: 10, color: 'var(--ink-muted)', fontWeight: 700 }}>
+              {checkedAt}
+            </span>
+          )}
+        </div>
+      )}
+    </button>
+  );
+}
+
+// ========== today screen ==========
+function TodayScreen() {
+  // Track checked items: { itemId: { by: userId, at: 'timestamp' } }
+  const [checkedMap, setCheckedMap] = useState({
+    i1: { by: 'u1', at: '7:42' }, // Water bottle — Anna already checked
+  });
+  const [toast, setToast] = useState(null);
+
+  const allItems = [...eventItems, ...dailyItems]; // event items show first
+  const totalCount = allItems.length;
+  const checkedCount = Object.keys(checkedMap).length;
+  const allPacked = checkedCount === totalCount;
+  const criticalRemaining = useMemo(
+    () => allItems.filter(i => i.critical && !checkedMap[i.id]).length,
+    [checkedMap, allItems]
+  );
+
+  const handleToggle = (itemId) => {
+    setCheckedMap(prev => {
+      const next = { ...prev };
+      if (next[itemId]) {
+        delete next[itemId];
+      } else {
+        const now = new Date();
+        next[itemId] = {
+          by: currentUserId,
+          at: `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`,
+        };
+        // Check if this completion finishes everything
+        if (Object.keys(next).length === totalCount) {
+          setTimeout(() => setToast('Bag packed! 🎉'), 100);
+          setTimeout(() => setToast(null), 2400);
+        }
+      }
+      return next;
+    });
+  };
+
+  return (
+    <>
+      <div className="screen-body">
+        {/* Header with greeting */}
+        <div style={{ padding: '20px 24px 12px' }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: 4,
+          }}>
+            <div>
+              <div className="screen-eyebrow">Tuesday · April 21</div>
+              <h1 className="screen-title">
+                Good morning,<br />
+                <em>Anna</em>
+              </h1>
+            </div>
+            <AvatarStack members={members} />
+          </div>
+        </div>
+
+        {/* Progress summary card */}
+        <div className="card card-inset" style={{
+          marginTop: 16,
+          padding: 18,
+          background: allPacked
+            ? 'linear-gradient(135deg, #B8D4C2 0%, #5A8C6F 100%)'
+            : 'linear-gradient(135deg, #F5DFA0 0%, #E8B84A 100%)',
+          border: 'none',
+          color: allPacked ? 'white' : 'var(--ink)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.75 }}>
+                Today's bag
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                fontWeight: 500,
+                marginTop: 4,
+                lineHeight: 1.15,
+              }}>
+                {allPacked
+                  ? 'All packed & ready'
+                  : criticalRemaining > 0
+                    ? `${criticalRemaining} essential${criticalRemaining > 1 ? 's' : ''} to go`
+                    : `${totalCount - checkedCount} item${totalCount - checkedCount > 1 ? 's' : ''} left`}
+              </div>
+            </div>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontFamily: 'var(--font-display)',
+              fontWeight: 700,
+              fontSize: 18,
+            }}>
+              {checkedCount}/{totalCount}
+            </div>
+          </div>
+          {/* Progress bar */}
+          <div style={{
+            marginTop: 14,
+            height: 6,
+            background: 'rgba(255,255,255,0.35)',
+            borderRadius: 999,
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%',
+              width: `${(checkedCount / totalCount) * 100}%`,
+              background: 'white',
+              borderRadius: 999,
+              transition: 'width 0.4s ease',
+            }} />
+          </div>
+        </div>
+
+        {/* Today's event banner */}
+        <div style={{ padding: '8px 24px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 14px',
+            background: 'var(--sun-soft)',
+            borderRadius: 'var(--r-md)',
+          }}>
+            <span style={{ fontSize: 20 }}>🏊</span>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#8A6B12' }}>
+                TODAY'S SPECIAL
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)' }}>
+                Swimming day — extra items added
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Checklist items */}
+        <div className="section-label">Packing list</div>
+        <div className="card card-inset" style={{ padding: 0 }}>
+          {allItems.map((item) => (
+            <ChecklistRow
+              key={item.id}
+              item={item}
+              checked={!!checkedMap[item.id]}
+              checkedBy={checkedMap[item.id]?.by}
+              checkedAt={checkedMap[item.id]?.at}
+              onToggle={handleToggle}
+            />
+          ))}
+        </div>
+
+        {/* Quick action — mark absent */}
+        <div style={{ padding: '4px 24px 24px' }}>
+          <button className="btn-ghost" style={{ width: '100%' }}>
+            Mark Emma absent today
+          </button>
+        </div>
+      </div>
+
+      <Toast message={toast} show={!!toast} />
+    </>
+  );
+}
+
+// ========== calendar screen ==========
+const TYPE_COLORS = {
+  closure: 'var(--c-closure)',
+  vacation: 'var(--c-vacation)',
+  absence: 'var(--c-absence)',
+  event: 'var(--c-event)',
+};
+
+const TYPE_LABELS = {
+  closure: 'Closed',
+  vacation: 'Vacation',
+  absence: 'Absent',
+  event: 'Event',
+};
+
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function getEventsByDate() {
+  const map = {};
+  events.forEach(e => {
+    if (!map[e.date]) map[e.date] = [];
+    map[e.date].push(e);
+  });
+  return map;
+}
+
+function CalendarScreen() {
+  const [viewMonth, setViewMonth] = useState(new Date(TODAY.getFullYear(), TODAY.getMonth(), 1));
+  const [selected, setSelected] = useState(formatDate(TODAY));
+
+  const eventMap = getEventsByDate();
+
+  // Build calendar grid (Monday start)
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  // Monday = 0, Sunday = 6
+  const startOffset = (firstDay.getDay() + 6) % 7;
+  const daysInMonth = lastDay.getDate();
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const monthName = viewMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const isToday = (d) => d && d === TODAY.getDate() && month === TODAY.getMonth() && year === TODAY.getFullYear();
+
+  const selectedEvents = selected ? (eventMap[selected] || []) : [];
+
+  const goPrev = () => setViewMonth(new Date(year, month - 1, 1));
+  const goNext = () => setViewMonth(new Date(year, month + 1, 1));
+
+  return (
+    <div className="screen-body">
+      <div className="screen-header">
+        <div className="screen-eyebrow">Calendar</div>
+        <h1 className="screen-title">Emma's <em>month</em></h1>
+      </div>
+
+      {/* Month nav */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '8px 24px 16px',
+      }}>
+        <button onClick={goPrev} style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'var(--cream)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--ink)',
+        }}>
+          <Icons.ChevronLeft />
+        </button>
+        <div style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: 20,
+          fontWeight: 500,
+          letterSpacing: '-0.01em',
+        }}>
+          {monthName}
+        </div>
+        <button onClick={goNext} style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'var(--cream)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--ink)',
+        }}>
+          <Icons.ChevronRight />
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        padding: '0 20px',
+        marginBottom: 8,
+      }}>
+        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+          <div key={i} style={{
+            textAlign: 'center',
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: '0.1em',
+            color: i >= 5 ? 'var(--ink-muted)' : 'var(--ink-soft)',
+          }}>
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(7, 1fr)',
+        padding: '0 20px',
+        gap: 4,
+      }}>
+        {cells.map((d, i) => {
+          if (!d) return <div key={i} style={{ aspectRatio: '1' }} />;
+          const dateStr = formatDate(new Date(year, month, d));
+          const dayEvents = eventMap[dateStr] || [];
+          const primaryType = dayEvents[0]?.type;
+          const isSelected = selected === dateStr;
+          const today = isToday(d);
+          const dow = new Date(year, month, d).getDay();
+          const isWeekend = dow === 0 || dow === 6;
+
+          return (
+            <button
+              key={i}
+              onClick={() => setSelected(dateStr)}
+              style={{
+                aspectRatio: '1',
+                borderRadius: 10,
+                background: isSelected
+                  ? 'var(--terracotta)'
+                  : primaryType
+                    ? TYPE_COLORS[primaryType]
+                    : isWeekend
+                      ? 'transparent'
+                      : 'var(--cream)',
+                color: isSelected ? 'white' : 'var(--ink)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: today ? 800 : 600,
+                fontSize: 14,
+                position: 'relative',
+                border: today && !isSelected ? '2px solid var(--terracotta)' : 'none',
+                transition: 'transform 0.1s ease',
+              }}
+            >
+              {d}
+              {dayEvents.length > 0 && !isSelected && (
+                <div style={{
+                  display: 'flex',
+                  gap: 2,
+                  marginTop: 2,
+                }}>
+                  {dayEvents.slice(0, 3).map((_, k) => (
+                    <div key={k} style={{
+                      width: 3,
+                      height: 3,
+                      borderRadius: '50%',
+                      background: 'var(--ink-soft)',
+                    }} />
+                  ))}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Selected date details */}
+      <div className="section-label" style={{ marginTop: 20 }}>
+        {selected === formatDate(TODAY) ? 'Today' : new Date(selected).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+      </div>
+
+      {selectedEvents.length === 0 ? (
+        <div style={{
+          padding: '16px 24px',
+          margin: '0 20px 16px',
+          background: 'var(--cream)',
+          borderRadius: 'var(--r-md)',
+          fontSize: 14,
+          color: 'var(--ink-muted)',
+          fontStyle: 'italic',
+        }}>
+          Nothing scheduled. Tap + to add.
+        </div>
+      ) : (
+        <div className="card card-inset" style={{ padding: 0 }}>
+          {selectedEvents.map((ev, i) => (
+            <div key={ev.id} style={{
+              display: 'flex',
+              gap: 14,
+              padding: '14px 18px',
+              borderBottom: i < selectedEvents.length - 1 ? '1px solid rgba(43,38,32,0.06)' : 'none',
+              alignItems: 'center',
+            }}>
+              <div style={{
+                width: 6,
+                height: 40,
+                borderRadius: 3,
+                background: TYPE_COLORS[ev.type],
+              }} />
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-muted)',
+                }}>
+                  {TYPE_LABELS[ev.type]}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 2 }}>
+                  {ev.title}
+                </div>
+                {ev.checklist && (
+                  <div style={{ marginTop: 6 }}>
+                    <span className="chip">📋 {ev.checklist} list attached</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add button */}
+      <div style={{ padding: '4px 24px 24px' }}>
+        <button className="btn-primary" style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <Icons.Plus width={18} height={18} />
+          Add event or absence
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ========== lists screen ==========
+const KIND_META = {
+  daily: { label: 'Every day', color: 'var(--terracotta)', emoji: '🌅' },
+  event: { label: 'Event-based', color: 'var(--sun)', emoji: '🎯' },
+  weather: { label: 'Weather-based', color: 'var(--sky)', emoji: '☁️' },
+};
+
+function ListsScreen() {
+  return (
+    <div className="screen-body">
+      <div className="screen-header">
+        <div className="screen-eyebrow">Templates</div>
+        <h1 className="screen-title">Packing <em>lists</em></h1>
+      </div>
+
+      <div style={{ padding: '4px 24px 16px' }}>
+        <p style={{ fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+          Lists combine automatically based on the day. Your daily list plus any active events or weather conditions create today's packing checklist.
+        </p>
+      </div>
+
+      {/* Template cards */}
+      <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {checklistTemplates.map(t => {
+          const meta = KIND_META[t.kind];
+          return (
+            <button
+              key={t.id}
+              style={{
+                background: 'var(--paper)',
+                border: '1px solid rgba(43,38,32,0.06)',
+                borderRadius: 'var(--r-lg)',
+                padding: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                textAlign: 'left',
+                boxShadow: 'var(--shadow-sm)',
+                transition: 'transform 0.1s ease',
+              }}
+            >
+              <div style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: meta.color,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 22,
+                flexShrink: 0,
+              }}>
+                {meta.emoji}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--ink-muted)',
+                }}>
+                  {meta.label}
+                </div>
+                <div style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: 'var(--ink)',
+                  marginTop: 2,
+                }}>
+                  {t.name}
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--ink-soft)',
+                  marginTop: 2,
+                }}>
+                  {t.itemCount} items · {t.description}
+                </div>
+              </div>
+              <Icons.ChevronRight width={18} height={18} />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Create new */}
+      <div style={{ padding: '20px 24px 24px' }}>
+        <button className="btn-primary" style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <Icons.Plus width={18} height={18} />
+          Create new list
+        </button>
+
+        {/* Import option */}
+        <button style={{
+          width: '100%',
+          marginTop: 10,
+          padding: '14px 18px',
+          background: 'transparent',
+          border: '2px dashed rgba(43,38,32,0.2)',
+          borderRadius: 'var(--r-md)',
+          color: 'var(--ink-soft)',
+          fontSize: 13,
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+        }}>
+          <Icons.Sparkle width={16} height={16} />
+          Import from kindergarten photo
+          <span style={{
+            fontSize: 9,
+            background: 'var(--lavender)',
+            color: 'white',
+            padding: '2px 6px',
+            borderRadius: 999,
+            fontWeight: 800,
+            letterSpacing: '0.05em',
+          }}>
+            SOON
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ========== household screen ==========
+function HouseholdScreen() {
+  const [toast, setToast] = useState(null);
+
+  const handleInvite = () => {
+    setToast('Invite link copied');
+    setTimeout(() => setToast(null), 2000);
+  };
+
+  return (
+    <>
+      <div className="screen-body">
+        <div className="screen-header">
+          <div className="screen-eyebrow">Household</div>
+          <h1 className="screen-title">{household.name.split("'")[0]}'s <em>family</em></h1>
+        </div>
+
+        {/* Child card */}
+        <div className="card card-inset" style={{ padding: 18, marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: 18,
+              background: 'linear-gradient(135deg, var(--terracotta-soft), var(--terracotta))',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 28,
+            }}>
+              👧
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-muted)',
+              }}>
+                Child
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 22,
+                fontWeight: 500,
+                marginTop: 2,
+              }}>
+                {household.child.name}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--ink-soft)' }}>
+                Age {household.child.age} · {household.child.kindergarten}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Members */}
+        <div className="section-label">Members · {members.length}</div>
+        <div className="card card-inset" style={{ padding: 0 }}>
+          {members.map((m, i) => (
+            <div key={m.id} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '14px 18px',
+              borderBottom: i < members.length - 1 ? '1px solid rgba(43,38,32,0.06)' : 'none',
+            }}>
+              <div style={{ position: 'relative' }}>
+                <Avatar member={m} size="lg" />
+                {m.online && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    background: 'var(--sage)',
+                    border: '2px solid var(--paper)',
+                  }} />
+                )}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>
+                  {m.name}
+                </div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginTop: 2,
+                }}>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: '0.05em',
+                    color: m.role === 'Owner' ? 'var(--terracotta-deep)' : 'var(--ink-muted)',
+                    background: m.role === 'Owner' ? 'var(--terracotta-soft)' : 'var(--cream)',
+                    padding: '2px 8px',
+                    borderRadius: 999,
+                  }}>
+                    {m.role}
+                  </span>
+                  <span style={{ fontSize: 12, color: 'var(--ink-muted)' }}>
+                    {m.online ? 'Online now' : 'Offline'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Invite */}
+        <div style={{ padding: '16px 24px' }}>
+          <button onClick={handleInvite} className="btn-primary" style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+          }}>
+            <Icons.Plus width={18} height={18} />
+            Invite co-parent or caregiver
+          </button>
+          <p style={{
+            fontSize: 12,
+            color: 'var(--ink-muted)',
+            textAlign: 'center',
+            marginTop: 10,
+            lineHeight: 1.5,
+          }}>
+            Everyone sees the same checklist in real time.<br />
+            Changes sync instantly.
+          </p>
+        </div>
+
+        {/* Role legend */}
+        <div className="section-label">Roles</div>
+        <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[
+            { role: 'Owner', desc: 'Full access, billing, can delete household' },
+            { role: 'Parent', desc: 'Edit everything, invite members, import docs' },
+            { role: 'Caregiver', desc: 'Check items and mark absences; no structural changes' },
+            { role: 'Viewer', desc: 'Read-only access for grandparents and others' },
+          ].map(r => (
+            <div key={r.role} style={{
+              display: 'flex',
+              gap: 10,
+              padding: '8px 12px',
+              background: 'var(--cream)',
+              borderRadius: 10,
+            }}>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.05em',
+                color: 'var(--ink)',
+                minWidth: 72,
+              }}>
+                {r.role}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+                {r.desc}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Toast message={toast} show={!!toast} />
+    </>
+  );
+}
+
+// ========== activity screen ==========
+const ACTION_VERBS = {
+  checked: { verb: 'packed', icon: '✓', color: 'var(--sage)' },
+  added: { verb: 'added', icon: '+', color: 'var(--terracotta)' },
+  joined: { verb: 'joined', icon: '★', color: 'var(--lavender)' },
+};
+
+function ActivityScreen() {
+  return (
+    <div className="screen-body">
+      <div className="screen-header">
+        <div className="screen-eyebrow">Activity</div>
+        <h1 className="screen-title">Everything <em>together</em></h1>
+      </div>
+
+      <div style={{ padding: '4px 24px 16px' }}>
+        <p style={{ fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.5 }}>
+          Every change in the household, in one place. No more coordinating over text messages.
+        </p>
+      </div>
+
+      {/* Timeline */}
+      <div style={{ padding: '0 24px', position: 'relative' }}>
+        {/* Vertical line */}
+        <div style={{
+          position: 'absolute',
+          left: 40,
+          top: 20,
+          bottom: 20,
+          width: 2,
+          background: 'rgba(43,38,32,0.08)',
+        }} />
+
+        {activity.map((a, i) => {
+          const user = memberById(a.userId);
+          const meta = ACTION_VERBS[a.action] || ACTION_VERBS.added;
+          return (
+            <div key={a.id} style={{
+              display: 'flex',
+              gap: 14,
+              padding: '12px 0',
+              position: 'relative',
+            }}>
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <Avatar member={user} />
+                <div style={{
+                  position: 'absolute',
+                  bottom: -4,
+                  right: -4,
+                  width: 20,
+                  height: 20,
+                  borderRadius: '50%',
+                  background: meta.color,
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 11,
+                  fontWeight: 800,
+                  border: '2px solid var(--paper)',
+                }}>
+                  {meta.icon}
+                </div>
+              </div>
+              <div style={{ flex: 1, paddingTop: 4 }}>
+                <div style={{ fontSize: 14, lineHeight: 1.45 }}>
+                  <span style={{ fontWeight: 800 }}>{user.name}</span>
+                  <span style={{ color: 'var(--ink-soft)' }}> {meta.verb} </span>
+                  <span style={{ fontWeight: 700 }}>{a.target}</span>
+                </div>
+                <div style={{
+                  fontSize: 12,
+                  color: 'var(--ink-muted)',
+                  marginTop: 2,
+                }}>
+                  {a.at}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Empty bottom state */}
+      <div style={{
+        padding: '24px',
+        textAlign: 'center',
+        fontSize: 12,
+        color: 'var(--ink-muted)',
+        fontStyle: 'italic',
+      }}>
+        History keeps 30 days of activity
+      </div>
+    </div>
+  );
+}
+
+// ========== main app ==========
+const SCREEN_INFO = {
+  today: {
+    eyebrow: 'Primary screen',
+    title: 'Today, at a glance',
+    body: 'The morning screen. Open it, see what Emma needs, check items off. Everything else is supporting context.',
+    bullets: [
+      'Tap any row to mark it packed — syncs to your co-parent instantly',
+      'Critical items show a red dot and block the "all packed" celebration',
+      'Event-specific items (Swimming day) merge automatically with your daily defaults',
+      'Watch the avatar appear next to items your co-parent already checked',
+    ],
+  },
+  calendar: {
+    eyebrow: 'Supporting feature',
+    title: 'The kindergarten month',
+    body: 'Not trying to replace Google Calendar — a focused view of kindergarten life. Closures, absences, special days.',
+    bullets: [
+      'Tap any day to see details — events, absences, linked checklists',
+      'Multi-day vacations show as continuous blocks',
+      'The color language stays consistent across the whole app',
+    ],
+    legend: [
+      { color: 'var(--c-event)', label: 'Special event (swimming, trip)' },
+      { color: 'var(--c-closure)', label: 'Kindergarten closed' },
+      { color: 'var(--c-vacation)', label: 'Family vacation' },
+      { color: 'var(--c-absence)', label: 'Sick / absent' },
+    ],
+  },
+  lists: {
+    eyebrow: 'Template management',
+    title: 'Stackable lists',
+    body: 'Three types of list stack on top of each other to build each day\'s packing checklist.',
+    bullets: [
+      'Daily default — the always-there items like water bottle and lunchbox',
+      'Event-based — attached to calendar events like Swimming or Forest trip',
+      'Weather-based — activates when conditions match (e.g., >60% rain forecast)',
+      'Document import is scoped for v1.1 — a paste-text fallback ships in v1.0',
+    ],
+  },
+  household: {
+    eyebrow: 'Priority feature',
+    title: 'Built for sharing',
+    body: 'The whole app is designed around households, not individuals. Every piece of data is shared by default.',
+    bullets: [
+      'Four roles — Owner, Parent, Caregiver, Viewer — with different permissions',
+      'Invite links expire in 7 days and can be revoked',
+      'Green dot = member is online and could be editing right now',
+      'A single user can belong to multiple households (separated parents)',
+    ],
+  },
+  activity: {
+    eyebrow: 'Coordination layer',
+    title: 'No more WhatsApp chaos',
+    body: 'A shared timeline of every change. Replaces the text-message coordination parents currently juggle.',
+    bullets: [
+      '30-day rolling history of checks, additions, and member changes',
+      'Each entry shows which member made the change and when',
+      'Silences duplicate notifications — if Marco packed the bag, Anna\'s reminder won\'t fire',
+    ],
+  },
+};
+
+function App() {
+  const [screen, setScreen] = useState('today');
+
+  const screens = {
+    today: <TodayScreen />,
+    calendar: <CalendarScreen />,
+    lists: <ListsScreen />,
+    household: <HouseholdScreen />,
+    activity: <ActivityScreen />,
+  };
+
+  const info = SCREEN_INFO[screen];
+
+  return (
+    <div className="phone-shell">
+      <PhoneFrame>
+        {screens[screen]}
+        <TabBar active={screen} onChange={setScreen} />
+      </PhoneFrame>
+
+      <aside className="info-panel">
+        <div className="info-eyebrow">{info.eyebrow}</div>
+        <h2 className="info-title">
+          {info.title.split(' ').slice(0, -2).join(' ')}{' '}
+          <em>{info.title.split(' ').slice(-2).join(' ')}</em>
+        </h2>
+        <p>{info.body}</p>
+        <ul>
+          {info.bullets.map((b, i) => <li key={i}>{b}</li>)}
+        </ul>
+        {info.legend && (
+          <div className="info-panel-legend">
+            <h4>Color legend</h4>
+            {info.legend.map((l, i) => (
+              <div key={i} className="legend-row">
+                <div className="legend-swatch" style={{ background: l.color }} />
+                <span>{l.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="info-panel-legend">
+          <h4>Prototype notes</h4>
+          <p style={{ fontSize: 12, color: 'var(--ink-muted)', lineHeight: 1.5 }}>
+            All interactions work — tap checklist items, switch months, jump between screens. Data resets on refresh.
+          </p>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
