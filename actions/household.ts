@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 
 const DEFAULT_ITEMS = [
   { emoji: '💧', title: 'Water bottle',           critical: false, position: 0 },
@@ -12,10 +11,12 @@ const DEFAULT_ITEMS = [
   { emoji: '📓', title: 'Communication notebook',  critical: false, position: 5 },
 ]
 
-export async function createHousehold(formData: FormData) {
+type ActionResult = { error: string } | { success: true }
+
+export async function createHousehold(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
+  if (!user) return { error: 'Not signed in' }
 
   const displayName      = formData.get('display_name') as string
   const avatarColor      = formData.get('avatar_color') as string
@@ -28,15 +29,17 @@ export async function createHousehold(formData: FormData) {
     .select('id')
     .single()
 
-  if (hErr || !household) throw new Error('Could not create household: ' + hErr?.message)
+  if (hErr || !household) return { error: hErr?.message ?? 'Could not create household' }
 
-  await supabase.from('memberships').insert({
+  const { error: mErr } = await supabase.from('memberships').insert({
     household_id: household.id,
     user_id: user.id,
     role: 'parent',
     display_name: displayName,
     avatar_color: avatarColor,
   })
+
+  if (mErr) return { error: mErr.message }
 
   const { data: checklist } = await supabase
     .from('checklists')
@@ -50,17 +53,17 @@ export async function createHousehold(formData: FormData) {
     )
   }
 
-  redirect('/today')
+  return { success: true }
 }
 
 export async function joinWithCode(
   code: string,
   displayName: string,
   avatarColor: string
-): Promise<{ error: string } | null> {
+): Promise<ActionResult> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
+  if (!user) return { error: 'Not signed in' }
 
   const { data: invite } = await supabase
     .from('invite_codes')
@@ -84,5 +87,5 @@ export async function joinWithCode(
 
   await supabase.from('invite_codes').update({ used_at: new Date().toISOString() }).eq('code', invite.code)
 
-  redirect('/today')
+  return { success: true }
 }

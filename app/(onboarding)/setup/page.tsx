@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { AVATAR_COLORS } from '@/lib/types'
 import { createHousehold, joinWithCode } from '@/actions/household'
 
 type Step = 'profile' | 'choice' | 'new-household' | 'join'
 
 export default function SetupPage() {
+  const router = useRouter()
   const [step, setStep] = useState<Step>('profile')
   const [displayName, setDisplayName] = useState('')
   const [avatarColor, setAvatarColor] = useState(AVATAR_COLORS[0].value)
@@ -14,6 +16,7 @@ export default function SetupPage() {
   const [kindergartenName, setKindergartenName] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [joinError, setJoinError] = useState('')
+  const [householdError, setHouseholdError] = useState('')
   const [isPending, startTransition] = useTransition()
 
   function handleProfileNext(e: React.FormEvent) {
@@ -24,12 +27,21 @@ export default function SetupPage() {
 
   function handleCreateHousehold(e: React.FormEvent) {
     e.preventDefault()
+    setHouseholdError('')
     const fd = new FormData()
     fd.set('display_name', displayName)
     fd.set('avatar_color', avatarColor)
     fd.set('child_name', childName)
     fd.set('kindergarten_name', kindergartenName)
-    startTransition(() => createHousehold(fd))
+    startTransition(async () => {
+      const result = await createHousehold(fd)
+      if ('error' in result) {
+        setHouseholdError(result.error)
+      } else {
+        router.push('/today')
+        router.refresh()
+      }
+    })
   }
 
   async function handleJoin(e: React.FormEvent) {
@@ -37,7 +49,12 @@ export default function SetupPage() {
     setJoinError('')
     startTransition(async () => {
       const result = await joinWithCode(inviteCode, displayName, avatarColor)
-      if (result?.error) setJoinError(result.error)
+      if ('error' in result) {
+        setJoinError(result.error)
+      } else {
+        router.push('/today')
+        router.refresh()
+      }
     })
   }
 
@@ -230,6 +247,12 @@ export default function SetupPage() {
             We'll add a default daily checklist — water bottle, lunchbox, indoor shoes and more.
             You can edit it any time.
           </p>
+
+          {householdError && (
+            <p className="text-sm text-center font-medium" style={{ color: 'var(--rose)' }}>
+              {householdError}
+            </p>
+          )}
 
           <button
             type="submit"
