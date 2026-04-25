@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/image'
 
 type ItemRow = {
   id: string
@@ -12,7 +13,10 @@ type ItemRow = {
   quantity: number
   min_quantity: number
   notes: string | null
+  photo_url: string | null
 }
+
+const PHOTO_BUCKET = 'inventory-photos'
 
 const DEFAULT_BG = '#F5EFE4'
 
@@ -55,7 +59,7 @@ export default function InventoryPage() {
       const houseId = m.household_id
       const { data } = await supabase
         .from('inventory_items')
-        .select('id, name, emoji, bg_color, category, quantity, min_quantity, notes')
+        .select('id, name, emoji, bg_color, category, quantity, min_quantity, notes, photo_url')
         .eq('household_id', houseId)
         .order('name', { ascending: true })
       if (cancelled) return
@@ -229,11 +233,21 @@ export default function InventoryPage() {
                   onClick={() => setEditing(item)}
                   className="flex-1 flex flex-col items-start gap-2 text-left"
                 >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="text-3xl leading-none">{item.emoji ?? '📦'}</span>
+                  <div className="flex items-start justify-between w-full gap-2">
+                    {item.photo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.photo_url}
+                        alt={item.name}
+                        className="rounded-2xl object-cover flex-shrink-0"
+                        style={{ width: 64, height: 64 }}
+                      />
+                    ) : (
+                      <span className="text-3xl leading-none">{item.emoji ?? '📦'}</span>
+                    )}
                     {(isOut || isLow) && (
                       <span
-                        className="text-[10px] font-bold rounded-full px-2 py-0.5 uppercase tracking-wide"
+                        className="text-[10px] font-bold rounded-full px-2 py-0.5 uppercase tracking-wide flex-shrink-0"
                         style={{
                           background: isOut ? 'var(--rose)' : 'var(--sun)',
                           color: 'white',
@@ -321,8 +335,31 @@ function ItemSheet({
   const [quantity, setQuantity] = useState(item?.quantity ?? 1)
   const [minQty, setMinQty] = useState(item?.min_quantity ?? 1)
   const [notes, setNotes] = useState(item?.notes ?? '')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(item?.photo_url ?? null)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handlePhotoFile(file: File) {
+    setError(null)
+    setUploading(true)
+    try {
+      const blob = await compressImage(file)
+      const path = `${householdId}/${crypto.randomUUID()}.jpg`
+      const { error: uploadError } = await supabase
+        .storage
+        .from(PHOTO_BUCKET)
+        .upload(path, blob, { contentType: 'image/jpeg', upsert: false })
+      if (uploadError) throw uploadError
+      const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+      setPhotoUrl(data.publicUrl)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not upload photo.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function save() {
     if (!name.trim()) {
@@ -341,6 +378,7 @@ function ItemSheet({
       quantity,
       min_quantity: Math.max(0, minQty),
       notes: notes.trim() || null,
+      photo_url: photoUrl,
       last_verified_at: new Date().toISOString(),
     }
 
@@ -394,11 +432,58 @@ function ItemSheet({
         {/* Preview */}
         <div className="flex items-center gap-3 mb-4 rounded-2xl p-3"
              style={{ background: bgColor }}>
-          <span className="text-3xl">{emoji}</span>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={photoUrl}
+              alt="Item preview"
+              className="rounded-xl object-cover flex-shrink-0"
+              style={{ width: 56, height: 56 }}
+            />
+          ) : (
+            <span className="text-3xl">{emoji}</span>
+          )}
           <p className="font-bold text-base flex-1 truncate"
              style={{ color: 'var(--ink)' }}>
             {name || 'Item name'}
           </p>
+        </div>
+
+        {/* Photo */}
+        <label className="block text-xs font-semibold mb-1"
+               style={{ color: 'var(--ink-muted)' }}>
+          Photo
+        </label>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={async e => {
+            const file = e.target.files?.[0]
+            if (file) await handlePhotoFile(file)
+            e.target.value = ''
+          }}
+        />
+        <div className="flex gap-2 mb-3">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex-1 rounded-2xl py-3 px-4 font-semibold text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2"
+            style={{ background: 'var(--cream)', color: 'var(--ink)', opacity: uploading ? 0.6 : 1 }}
+          >
+            {uploading ? 'Uploading…' : photoUrl ? '📷 Replace photo' : '📷 Add photo'}
+          </button>
+          {photoUrl && !uploading && (
+            <button
+              onClick={() => setPhotoUrl(null)}
+              className="rounded-2xl py-3 px-4 font-semibold text-sm active:scale-[0.98] transition-transform"
+              style={{ background: 'transparent', color: 'var(--rose)' }}
+            >
+              Remove
+            </button>
+          )}
         </div>
 
         {/* Name */}
