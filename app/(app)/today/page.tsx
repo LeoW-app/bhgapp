@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Avatar } from '@/components/Avatar'
 
@@ -16,6 +17,57 @@ type ItemRow = {
 }
 
 type MemberInfo = { display_name: string | null; avatar_color: string | null }
+
+type EventType = 'closure' | 'vacation' | 'absence' | 'event' | 'note'
+
+type WeekEvent = {
+  id: string
+  type: EventType
+  title: string
+  starts_on: string
+  ends_on: string | null
+}
+
+const EVENT_META: Record<EventType, { label: string; color: string; emoji: string }> = {
+  closure:  { label: 'Closure',  color: 'var(--rose)',     emoji: '🚫' },
+  vacation: { label: 'Vacation', color: 'var(--sun)',      emoji: '🌴' },
+  absence:  { label: 'Absence',  color: 'var(--lavender)', emoji: '🤒' },
+  event:    { label: 'Event',    color: 'var(--sage)',     emoji: '🎉' },
+  note:     { label: 'Note',     color: 'var(--sky)',      emoji: '📝' },
+}
+
+function ymd(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function parseYmd(s: string) {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+function thisWeekRange(now: Date) {
+  // Monday → Sunday (matches the calendar grid)
+  const day = now.getDay() // 0 = Sun
+  const offset = (day + 6) % 7
+  const monday = new Date(now)
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(now.getDate() - offset)
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+  return { from: ymd(monday), to: ymd(sunday) }
+}
+
+function shortDateRange(start: string, end: string | null) {
+  if (!end || end === start) {
+    return parseYmd(start).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+  }
+  const s = parseYmd(start).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+  const e = parseYmd(end).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+  return `${s} – ${e}`
+}
 
 function todayDate() {
   return new Date().toISOString().split('T')[0]
@@ -38,6 +90,7 @@ export default function TodayPage() {
   const [myName, setMyName] = useState('You')
   const [childName, setChildName] = useState('your child')
   const [noChecklist, setNoChecklist] = useState(false)
+  const [weekEvents, setWeekEvents] = useState<WeekEvent[]>([])
 
   const loadChecklist = useCallback(
     async (houseId: string, uid: string, memberMap: Record<string, MemberInfo>) => {
@@ -141,6 +194,16 @@ export default function TodayPage() {
       )
 
       await loadChecklist(houseId, user.id, memberMap)
+
+      // Events for this week
+      const { from, to } = thisWeekRange(new Date())
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('id, type, title, starts_on, ends_on')
+        .eq('household_id', houseId)
+        .or(`and(starts_on.lte.${to},ends_on.gte.${from}),and(starts_on.lte.${to},ends_on.is.null,starts_on.gte.${from})`)
+        .order('starts_on', { ascending: true })
+      setWeekEvents((eventsData as WeekEvent[] | null) ?? [])
 
       // Realtime subscription
       const channel = supabase
@@ -258,6 +321,61 @@ export default function TodayPage() {
           </>
         )}
       </div>
+
+      {/* ── This week ── */}
+      {weekEvents.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between px-5 mb-2">
+            <h2 className="text-base font-bold"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>
+              This week
+            </h2>
+            <Link
+              href="/calendar"
+              className="text-xs font-semibold"
+              style={{ color: 'var(--terracotta)' }}
+            >
+              See all →
+            </Link>
+          </div>
+          <div className="flex gap-2 px-5 overflow-x-auto pb-1"
+               style={{ scrollbarWidth: 'none' }}>
+            {weekEvents.map(ev => {
+              const meta = EVENT_META[ev.type]
+              return (
+                <Link
+                  key={ev.id}
+                  href="/calendar"
+                  className="flex-shrink-0 rounded-2xl px-3 py-2.5 flex items-center gap-2.5"
+                  style={{
+                    background: 'var(--paper)',
+                    border: '1.5px solid var(--cream)',
+                    minWidth: 180,
+                    maxWidth: 240,
+                  }}
+                >
+                  <div
+                    className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base"
+                    style={{ background: meta.color, color: 'white' }}
+                  >
+                    {meta.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm leading-tight truncate"
+                       style={{ color: 'var(--ink)' }}>
+                      {ev.title}
+                    </p>
+                    <p className="text-[11px] mt-0.5"
+                       style={{ color: 'var(--ink-muted)' }}>
+                      {shortDateRange(ev.starts_on, ev.ends_on)}
+                    </p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Checklist ── */}
       {noChecklist ? (
