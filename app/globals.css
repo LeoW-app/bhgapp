@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Palette */
+  --color-cream: #F5EFE4;
+  --color-paper: #FBF7EE;
+  --color-ink: #2B2620;
+  --color-ink-soft: #5C544A;
+  --color-ink-muted: #958A7C;
+  --color-terracotta: #C66B3D;
+  --color-terracotta-deep: #9E4F26;
+  --color-sage: #5A8C6F;
+  --color-sage-deep: #3E6A52;
+  --color-sun: #E8B84A;
+  --color-rose: #C85A5A;
+  --color-sky: #6B95B8;
+  --color-lavender: #9B8EC4;
+
+  /* Typography */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-nunito), system-ui, sans-serif;
+}
+
+/* CSS custom properties for direct CSS use */
+:root {
+  --cream: #F5EFE4;
+  --paper: #FBF7EE;
+  --ink: #2B2620;
+  --ink-soft: #5C544A;
+  --ink-muted: #958A7C;
+  --terracotta: #C66B3D;
+  --terracotta-deep: #9E4F26;
+  --sage: #5A8C6F;
+  --sage-deep: #3E6A52;
+  --sun: #E8B84A;
+  --rose: #C85A5A;
+  --sky: #6B95B8;
+  --lavender: #9B8EC4;
+}
+
+/* ── Reset & base ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  height: 100%;
+  background: var(--paper);
+  /* Prevent bounce on iOS when overscrolling */
+  overscroll-behavior: none;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Mobile: prevent accidental text zoom on form focus */
+  touch-action: manipulation;
+}
+
+/* Keep the app to 390px on very wide desktop screens */
+#__next,
+main {
+  max-width: 390px;
+  margin: 0 auto;
+  position: relative;
+}

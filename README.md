@@ -1,62 +1,36 @@
-# Kindergarten Planner
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-A mobile-first kindergarten planner prototype for parents. Shared packing checklists, calendar with vacations and absences, and real-time sync between co-parents.
+## Getting Started
 
-**Live demo:** _(add your GitHub Pages URL here once deployed)_
-
-## What's inside
-
-- `index.html` — standalone runnable prototype. Open in any browser.
-- `src/` — reviewable source, organized by role:
-  - `App.jsx` — screen router + info panel
-  - `data/seed.js` — mock household data
-  - `styles/global.css` — design tokens, phone frame, base styles
-  - `components/` — shared UI (avatars, icons, tab bar, checklist row)
-  - `screens/` — the five main screens (Today, Calendar, Lists, Household, Activity)
-
-The source files use standard ES module syntax (`import`/`export`). The `index.html` is a pre-bundled single file that inlines everything — handy for quick deploys like GitHub Pages.
-
-## Running locally
-
-No build step needed. Just open `index.html` in a browser:
+First, run the development server:
 
 ```bash
-# macOS
-open index.html
-
-# Or serve it (any static server works)
-python3 -m http.server 8000
-# then visit http://localhost:8000
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## Deploying to GitHub Pages
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-1. Push this repo to GitHub
-2. Repo Settings → Pages → Source: `main` branch, `/` (root)
-3. Wait ~1 min, then visit `https://<username>.github.io/<repo-name>`
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## Tech choices
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- React 18 via CDN (no build toolchain)
-- Babel Standalone for JSX transpilation in the browser
-- Pure CSS with custom properties — no framework
-- Fraunces (display) + Nunito (body) from Google Fonts
+## Learn More
 
-## Status
+To learn more about Next.js, take a look at the following resources:
 
-This is a v1 interactive prototype based on the accompanying spec document. What works:
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-- All 5 screens with live navigation
-- Interactive checklist — tap to check items, see who packed what
-- Calendar month navigation with color-coded entries
-- Toast notifications for key actions
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-What's stubbed for future work:
+## Deploy on Vercel
 
-- Document import (OCR pipeline) — shown as "SOON" on the Lists screen
-- Creating new events, lists, items
-- Actual backend + auth — the spec calls for Node/Postgres + Clerk
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-## License
-
-MIT
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
