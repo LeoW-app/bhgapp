@@ -3,7 +3,8 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { AVATAR_COLORS } from '@/lib/types'
-import { createHousehold, joinWithCode } from '@/actions/household'
+import { createClient } from '@/lib/supabase/client'
+import { joinWithCode } from '@/actions/household'
 
 type Step = 'profile' | 'choice' | 'new-household' | 'join'
 
@@ -28,15 +29,16 @@ export default function SetupPage() {
   function handleCreateHousehold(e: React.FormEvent) {
     e.preventDefault()
     setHouseholdError('')
-    const fd = new FormData()
-    fd.set('display_name', displayName)
-    fd.set('avatar_color', avatarColor)
-    fd.set('child_name', childName)
-    fd.set('kindergarten_name', kindergartenName)
     startTransition(async () => {
-      const result = await createHousehold(fd)
-      if ('error' in result) {
-        setHouseholdError(result.error)
+      const supabase = createClient()
+      const { error } = await supabase.rpc('create_household_for_user', {
+        p_display_name:      displayName,
+        p_avatar_color:      avatarColor,
+        p_child_name:        childName,
+        p_kindergarten_name: kindergartenName,
+      })
+      if (error) {
+        setHouseholdError(error.message)
       } else {
         router.push('/today')
         router.refresh()
