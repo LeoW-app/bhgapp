@@ -9,9 +9,17 @@ type ListKind = 'daily' | 'event' | 'weather'
 
 type ChecklistRow = {
   id: string
+  household_id: string
   kind: ListKind
   name: string
   description: string | null
+}
+
+type InventoryItem = {
+  id: string
+  name: string
+  emoji: string | null
+  category: string | null
 }
 
 type ItemRow = {
@@ -41,6 +49,7 @@ export default function ListDetailPage() {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<ItemRow | null>(null)
   const [adding, setAdding] = useState(false)
+  const [pickingInventory, setPickingInventory] = useState(false)
   const [renamingMeta, setRenamingMeta] = useState(false)
 
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function ListDetailPage() {
     async function load() {
       const { data: listData } = await supabase
         .from('checklists')
-        .select('id, kind, name, description')
+        .select('id, household_id, kind, name, description')
         .eq('id', listId)
         .maybeSingle()
       if (!listData) { if (!cancelled) setLoading(false); return }
@@ -199,14 +208,21 @@ export default function ListDetailPage() {
         </ul>
       )}
 
-      {/* ── Add button ── */}
-      <div className="px-5 mb-6">
+      {/* ── Add buttons ── */}
+      <div className="px-5 mb-3 flex flex-col gap-2">
         <button
           onClick={() => setAdding(true)}
           className="w-full rounded-2xl py-3 font-semibold text-sm active:scale-[0.99] transition-transform"
           style={{ background: 'var(--cream)', color: 'var(--ink)' }}
         >
           + Add item
+        </button>
+        <button
+          onClick={() => setPickingInventory(true)}
+          className="w-full rounded-2xl py-3 font-semibold text-sm active:scale-[0.99] transition-transform flex items-center justify-center gap-2"
+          style={{ background: 'var(--cream)', color: 'var(--ink)' }}
+        >
+          <span>🗄️</span> Add from inventory
         </button>
       </div>
 
@@ -219,6 +235,19 @@ export default function ListDetailPage() {
           Delete this list
         </button>
       </div>
+
+      {pickingInventory && list && (
+        <InventoryPickerSheet
+          householdId={list.household_id}
+          listId={list.id}
+          nextPosition={items.length}
+          onClose={() => setPickingInventory(false)}
+          onAdded={(newItems) => {
+            setItems(prev => [...prev, ...newItems])
+            setPickingInventory(false)
+          }}
+        />
+      )}
 
       {adding && (
         <ItemSheet
@@ -423,6 +452,219 @@ function ItemSheet({
 }
 
 // ─────────────────────────────────────────────────────────────
+// Inventory picker sheet
+// ─────────────────────────────────────────────────────────────
+
+function InventoryPickerSheet({
+  householdId,
+  listId,
+  nextPosition,
+  onClose,
+  onAdded,
+}: {
+  householdId: string
+  listId: string
+  nextPosition: number
+  onClose: () => void
+  onAdded: (items: ItemRow[]) => void
+}) {
+  const supabase = createClient()
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      const { data } = await supabase
+        .from('inventory_items')
+        .select('id, name, emoji, category')
+        .eq('household_id', householdId)
+        .order('name', { ascending: true })
+      if (!cancelled) {
+        setInventory((data as InventoryItem[] | null) ?? [])
+        setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [householdId, supabase])
+
+  function toggle(id: string) {
+    setSelected(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) { next.delete(id) } else { next.add(id) }
+      return next
+    })
+  }
+
+  async function addSelected() {
+    if (selected.size === 0) return
+    setSaving(true)
+    const toInsert = inventory
+      .filter(i => selected.has(i.id))
+      .map((i, idx) => ({
+        checklist_id: listId,
+        emoji: i.emoji ?? null,
+        title: i.name,
+        critical: false,
+        position: nextPosition + idx,
+      }))
+    const { data, error } = await supabase
+      .from('checklist_items')
+      .insert(toInsert)
+      .select('id, emoji, title, critical, position')
+    setSaving(false)
+    if (error || !data) return
+    onAdded(data as ItemRow[])
+  }
+
+  const filtered = inventory.filter(i =>
+    i.name.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const grouped = filtered.reduce<Record<string, InventoryItem[]>>((acc, item) => {
+    const key = item.category ?? 'Other'
+    if (!acc[key]) acc[key] = []
+    acc[key].push(item)
+    return acc
+  }, {})
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: 'rgba(0,0,0,0.4)' }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-[390px] rounded-t-3xl flex flex-col"
+        style={{ background: 'var(--paper)', maxHeight: '85vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0">
+          <h2 className="text-xl font-bold"
+              style={{ fontFamily: 'var(--font-display)', color: 'var(--ink)' }}>
+            Add from inventory
+          </h2>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full flex items-center justify-center"
+            style={{ background: 'var(--cream)', color: 'var(--ink)' }}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-5 pb-3 flex-shrink-0">
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search items…"
+            className="w-full rounded-2xl px-4 py-3 text-base"
+            style={{ background: 'var(--cream)', color: 'var(--ink)', outline: 'none' }}
+          />
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto px-5 pb-3">
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="w-7 h-7 rounded-full border-2 border-t-transparent animate-spin"
+                   style={{ borderColor: 'var(--terracotta)', borderTopColor: 'transparent' }} />
+            </div>
+          ) : inventory.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-2xl mb-2">🗄️</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
+                Your inventory is empty
+              </p>
+              <p className="text-xs mt-1" style={{ color: 'var(--ink-muted)' }}>
+                Add items in the Inventory tab first.
+              </p>
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-sm py-8" style={{ color: 'var(--ink-muted)' }}>
+              No items match &ldquo;{search}&rdquo;
+            </p>
+          ) : (
+            Object.entries(grouped).sort().map(([cat, catItems]) => (
+              <div key={cat} className="mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest mb-2"
+                   style={{ color: 'var(--ink-muted)' }}>
+                  {cat}
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {catItems.map(item => {
+                    const sel = selected.has(item.id)
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => toggle(item.id)}
+                        className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left active:scale-[0.99] transition-transform"
+                        style={{
+                          background: sel ? 'var(--cream)' : 'var(--paper)',
+                          border: `1.5px solid ${sel ? 'var(--terracotta)' : 'var(--cream)'}`,
+                        }}
+                      >
+                        <span className="text-xl flex-shrink-0" style={{ width: 28, textAlign: 'center' }}>
+                          {item.emoji ?? '📦'}
+                        </span>
+                        <span className="flex-1 font-semibold text-sm" style={{ color: 'var(--ink)' }}>
+                          {item.name}
+                        </span>
+                        <div
+                          className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
+                          style={{
+                            background: sel ? 'var(--terracotta)' : 'transparent',
+                            border: `2px solid ${sel ? 'var(--terracotta)' : 'var(--ink-muted)'}`,
+                          }}
+                        >
+                          {sel && (
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                              <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2"
+                                    strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pt-3 pb-8 flex-shrink-0" style={{ borderTop: '1px solid var(--cream)' }}>
+          <button
+            onClick={addSelected}
+            disabled={selected.size === 0 || saving}
+            className="w-full rounded-full py-3 font-bold text-base active:scale-[0.98] transition-transform"
+            style={{
+              background: 'var(--terracotta)',
+              color: 'white',
+              opacity: selected.size === 0 || saving ? 0.5 : 1,
+            }}
+          >
+            {saving
+              ? 'Adding…'
+              : selected.size === 0
+              ? 'Select items to add'
+              : `Add ${selected.size} item${selected.size === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
 // List meta (rename / description) sheet
 // ─────────────────────────────────────────────────────────────
 
@@ -452,7 +694,7 @@ function MetaSheet({
       .from('checklists')
       .update({ name: name.trim(), description: description.trim() || null })
       .eq('id', list.id)
-      .select('id, kind, name, description')
+      .select('id, household_id, kind, name, description')
       .single()
     setSaving(false)
     if (dbError || !data) {
